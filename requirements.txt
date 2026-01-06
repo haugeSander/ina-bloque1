@@ -1,0 +1,6 @@
+paho-mqtt
+opencv-python
+mediapipe
+sys
+argparse
+datetime
