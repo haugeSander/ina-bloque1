@@ -12,14 +12,18 @@ Instead of processing video on a central server, we implemented a distributed sy
 
 ```mermaid
 graph TD
-    A[Webcam] -->|Video Feed| B(Python Script / MediaPipe)
-    B -->|Occupancy: True/False| C{MQTT Broker}
-    B -->|Temp/Humidity Data| C
+    A[Webcam] -->|Video Feed| B(Python Script)
+    B -->|Occupancy| C{MQTT Broker}
+    
+    subgraph Edge Client
+    B
+    S[Simulation Logic] -.->|Fake Date/Time| B
+    end
+    
     C -->|Sensor Data| D[Home Assistant]
     D -->|Control Signal| E[Shelly Bulb]
     
-    style B fill:#f9f,stroke:#333,stroke-width:2px
-    style D fill:#bbf,stroke:#333,stroke-width:2px
+    style S fill:#ff9,stroke:#333,stroke-dasharray: 5 5
 ```
 
 **The Data Flow:**
@@ -76,19 +80,31 @@ PASSWORD = "password"
 
 ## Usage
 
-Mode A: Simulation Only (No Camera) Sends random temperature, humidity, and time data only. Useful for testing Home Assistant triggers without a webcam.
+**Option 1: Simulation Only (No Camera)**
+Sends random temperature, humidity, and time data only. Useful for testing Home Assistant triggers without a webcam.
 
 ```bash
 python3 mqtt_publisher.py
 ```
 
-Mode B: AI Detection Mode (Camera On) Activates the webcam to detect people in real-time while also sending environmental data.
+**Option 2: AI Detection Mode (Camera On)**
+Activates the webcam to detect people in real-time while also sending environmental data.
 
 ```bash
 python3 mqtt_publisher.py --detection
+```
+
+**Option 3: The "Time Machine" (Demo Mode)**
+Combines AI detection with a fast-forwarding clock. The date advances by 1 hour every 2 seconds.
+- Quickly demonstrate how Home Assistant reacts to changing seasons (e.g., watching the light dim as the simulated date moves from Winter to Summer).
+- Controls: Press `s` in the video window to jump forward manually.
+
+```bash
+python3 mqtt_publisher.py --detection --simulation
 ```
 
 ## Testing & Validation
 We implemented two methods to verify system reliability:
 - Real-World Testing: Verifying computer vision by walking in/out of the camera frame. The system correctly identifies presence within milliseconds.
 - The "Simulator" Button: A virtual button in the Home Assistant dashboard that forces the "Occupied" state. This allows us to verify that the light bulb responds correctly to temperature changes (e.g., changing the season from "Summer" to "Winter") without needing to stand in front of the camera constantly.
+- Temporal Simulation: To validate the seasonal lighting logic without waiting for actual months to pass, we implemented a "Time Simulation Mode" in our Python client. This feature accelerates the system clock (advancing 1 hour every 2 seconds), allowing us to observe and verify the automation's behavior across a full calendar year in just a few minutes of real-time testing.
